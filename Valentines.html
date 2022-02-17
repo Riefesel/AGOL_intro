@@ -1,0 +1,78 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Paris Poem</title>
+  <style>
+    html, body, #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+  </style>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.22/esri/themes/light/main.css">
+  <script src="https://js.arcgis.com/4.22/"></script>
+  <script>
+
+  require([
+    "esri/config",
+    "esri/Map",
+    "esri/views/MapView",
+
+    "esri/Graphic",
+    "esri/layers/GraphicsLayer"
+
+    ], function(esriConfig,Map, MapView, Graphic, GraphicsLayer) {
+
+  esriConfig.apiKey = "AAPKe9350476b50c4506873bf10b38c2e8e8FHG0ZEAF0KdWXX16a1QJNeTO_YyFBZ6GoX7kdiPN9JQZ7borhOeXXxvNHpOC1QPM";
+
+  const map = new Map({
+    basemap: "arcgis-midcentury" //Basemap layer service
+  });
+
+  const view = new MapView({
+    map: map,
+    center: [2.2945,48.8584], //Eiffel Tower Longitude, latitude
+    zoom: 13,
+    container: "viewDiv"
+ });
+
+ const graphicsLayer = new GraphicsLayer();
+ map.add(graphicsLayer);
+
+ const point = { //Create a point
+    type: "point",
+    longitude: 2.2945,
+    latitude: 48.8584
+ };
+ const simpleMarkerSymbol = {
+    type: "simple-marker",
+    style: "diamond",
+    color: [255, 182, 193],  // light-pink
+    outline: {
+        color: [255, 0, 0], // red
+        width: 1
+    }
+ };
+const popupTemplate = {
+    title: "{Name}",
+    content: "{Description}"
+ }
+ const attributes = {
+    Name: "Nothing Gold Can Stay",
+    Description: "Nature's first green is gold, her hardest hue to hold. Her early leaf's a flower; But only so an hour. Then leaf subsides to leaf. So Eden sank to grief, So down to day. Nothing gold can stay - Robert Frost"
+ }
+ const pointGraphic = new Graphic({
+    geometry: point,
+    symbol: simpleMarkerSymbol
+ });
+ graphicsLayer.add(pointGraphic);
+
+ });
+</script>
+</head>
+<body>
+  <div id="viewDiv"></div>
+</body>
+</html>
