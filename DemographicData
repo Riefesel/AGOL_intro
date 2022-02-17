@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>ArcGIS API for JavaScript Tutorials: Display a map</title>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+    <!-- require ArcGIS REST JS libraries from https://unpkg.com -->
+    <script src="https://unpkg.com/@esri/arcgis-rest-request@3.0.0/dist/umd/request.umd.js"></script>
+    <script src="https://unpkg.com/@esri/arcgis-rest-auth@3.0.0/dist/umd/auth.umd.js"></script>
+    <script src="https://unpkg.com/@esri/arcgis-rest-demographics@3.0.0/dist/umd/demographics.umd.js"></script>
+    
+    <link rel="stylesheet" href="https://js.arcgis.com/4.22/esri/themes/light/main.css">
+    <script src="https://js.arcgis.com/4.22/"></script>
+    <script>
+      require(["esri/config","esri/Map", "esri/views/MapView", "esri/Graphic",
+            "esri/geometry/geometryEngine",
+            "esri/widgets/Search",
+            "esri/rest/locator",
+            "esri/core/watchUtils"
+              ],
+              function (esriConfig,Map, MapView, Graphic, geometryEngine, Search, locator, watchUtils) {
+        const authentication = new arcgisRest.ApiKey({
+                key: "AAPKe9350476b50c4506873bf10b38c2e8e8FHG0ZEAF0KdWXX16a1QJNeTO_YyFBZ6GoX7kdiPN9JQZ7borhOeXXxvNHpOC1QPM"
+            }); 
+        
+        esriConfig.apiKey = "AAPKe9350476b50c4506873bf10b38c2e8e8FHG0ZEAF0KdWXX16a1QJNeTO_YyFBZ6GoX7kdiPN9JQZ7borhOeXXxvNHpOC1QPM";
+
+        const map = new Map({
+          basemap: "arcgis-navigation" // Basemap layer service
+        });
+        const view = new MapView({
+          map: map,
+          center: [9.1900, 45.4642], // Milan, Italy Longitude, latitude
+          zoom: 4, // Zoom level
+          container: "viewDiv" // Div element
+        });
+        const search = new Search({
+                view: view
+            });
+            view.ui.add(search, "top-right");
+
+            search.on("select-result", (event) => {
+                getDemographicData(event.result.name, event.result.feature.geometry);
+            });
+        view.on("click", e => {
+const params = {
+                    location: e.mapPoint,
+                    outFields: "*"
+                };
+                const locatorUrl = "https://geocode-api.arcgis.com/arcgis/rest/services/World/GeocodeServer";
+
+                locator.locationToAddress(locatorUrl, params)
+          .then(function (response) { // Show the address found
+                        const city = response.attributes.City || response.attributes.Region;
+                        getDemographicData(city, params.location);
+                    });
+            });
+        function getDemographicData(city, point) {
+          // Request demographic data
+                arcgisRest.queryDemographicData({
+                    studyAreas: [{
+                        "geometry": {
+                            "x": point.longitude,
+                            "y": point.latitude
+                        }
+                    }],
+                    authentication: authentication
+                })
+          .then((response) => {
+                  if (response.results[0].value.FeatureSet.length > 0 &&
+                      response.results[0].value.FeatureSet[0].features.length > 0) {
+                        const attributes = response.results[0].value.FeatureSet[0].features[0].attributes;
+                        showData(city, attributes, point);
+                    }
+                });
+            }
+        function showData(city, attributes, point) {
+          const title = `Global facts near ${city}`;
+                const content =
+                    `Population: ${attributes.TOTPOP}<br>Males: ${attributes.TOTMALES} <br>Females: ${attributes.TOTFEMALES}<br>Average Household Size: ${attributes.AVGHHSZ}`;
+          view.popup.open({
+                    location: point,
+                    title: title,
+                    content: content
+                });
+          const buffer = geometryEngine.geodesicBuffer(point, 1, "miles");
+                const graphicBuffer = new Graphic({
+                    geometry: buffer,
+                    symbol: {
+                        type: "simple-fill",
+                        color: [50, 50, 50, 0.1],
+                        outline: {
+                            color: [0, 0, 0, 0.25],
+                            width: .5
+                        }
+                    }
+                })
+                view.graphics.removeAll();
+                view.graphics.add(graphicBuffer);
+            }
+      });
+    </script>
+  </head>
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>
